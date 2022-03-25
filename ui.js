@@ -12,7 +12,7 @@ $( document ).ready(function() {
             alert("Input something!")
         }
         else{
-            
+            //e3e39f7641fbba22e4e12038b4e1e37cbf9972547e187dd2494914d99beb5be6
             initWeb3(pKey, function onDone(address){
                 $("#walletDetails").html("Your wallet address is "+ address);
                 $(".view").show();
@@ -106,7 +106,7 @@ $( document ).ready(function() {
         var a2 = $('#team-data').val();
         var a3 = $('#team-betAmount').val();
 
-        $("#contestTx").html("");
+        $("#teamTx").html("");
         if(a1.length < 1 || a2.length < 1 || a3.length < 1){
             alert("Input something!")
         }
