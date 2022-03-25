@@ -59,6 +59,15 @@ async function  getAllTeams(callback){
 }
 
 
+async function getMaticBalance(callback){
+    web3.eth.getBalance(fanpower.defaultAccount)
+.then( function(balance){
+    console.log(balance);    
+    callback(web3.utils.fromWei(balance, 'ether'));
+});
+}
+
+
 //register a team
 async function createContest(contestData, betSize, deadline, success, error){
 
@@ -135,3 +144,81 @@ async function createTeam(contestId, teamData, betAmount,success,error){
 }
 
 
+async function fundMatic(success,error){
+
+    var contractAddressMaticFaucet = '0x7F092e65C688a509737FcD8D0998dD12208f5297';
+    var abiMaticFaucet = JSON.parse(`
+    [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"_sender","type":"address"},{"indexed":false,"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"ReceivedMatic","type":"event"},{"inputs":[],"name":"admin","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"airdropAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newAdmin","type":"address"}],"name":"changeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newAirdropAmount","type":"uint256"}],"name":"changeAirdropAmount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"changeOwner","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"receiveMatic","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address[]","name":"addresses","type":"address[]"}],"name":"transferMaticBulk","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawMatic","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+    `);
+
+    //contract instance
+    maticFaucet = new web3.eth.Contract(abiMaticFaucet, contractAddressMaticFaucet);
+
+
+    const gasPrice = await web3.eth.getGasPrice();
+    const gasEstimate = await maticFaucet.methods.receiveMatic().estimateGas({ from: fanpower.defaultAccount });
+
+
+    const tx = {
+        'from': fanpower.defaultAccount,
+        'to': contractAddressMaticFaucet, // faucet address to return eth
+        'data': maticFaucet.methods.receiveMatic().encodeABI(),
+        'gas': gasEstimate,
+        'gasPrice': gasPrice
+    };
+
+    const signPromise = web3.eth.accounts.signTransaction(tx, privateKey);
+
+    signPromise.then((signedTx) => {
+        const sentTx = web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction);
+        sentTx.on("receipt", receipt => {
+          //when receipt comes back
+          console.log('receipt',receipt);
+          success(receipt);
+        });
+        sentTx.on("error", err => {
+          //  on transaction error
+          console.log('error',err);
+          error(err);
+        });
+      }).catch((err) => {
+        //when promise fails
+        console.log('catch error',err);
+        error(err);
+      });
+
+}
+
+async function sendMatic(toAddress, amount,success,error){
+
+    const gasPrice = await web3.eth.getGasPrice();
+
+
+    const tx = {
+        'to': toAddress, // faucet address to return eth
+        'value': amount,
+        'gas': 30000,
+        'gasPrice': gasPrice
+        // optional data field to send message or execute smart contract
+       };
+
+    const signPromise = web3.eth.accounts.signTransaction(tx, privateKey);
+
+    signPromise.then((signedTx) => {
+        const sentTx = web3.eth.sendSignedTransaction(signedTx.raw || signedTx.rawTransaction);
+        sentTx.on("receipt", receipt => {
+          //when receipt comes back
+          console.log('receipt',receipt);
+          success(receipt);
+        });
+        sentTx.on("error", err => {
+          //  on transaction error
+          console.log('error',err);
+          error(err);
+        });
+      }).catch((err) => {
+        //when promise fails
+        console.log('catch error',err);
+        error(err);
+      });   
+}
